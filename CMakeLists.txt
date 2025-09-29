@@ -1,28 +1,62 @@
 cmake_minimum_required(VERSION 3.5)
-project(bt_hhcm)
+project(tree_hhcm VERSION 0.0.1)
+
+include(cmake/ExportProject.cmake)
+include(GNUInstallDirs)
 
 find_package(behaviortree_cpp REQUIRED)
 find_package(cartesian_interface REQUIRED)
+find_package(cartesian_interface_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 
-add_library(bt_hhcm SHARED 
-src/cartesio_solve.cpp
-src/cartesio_loader.cpp
-src/cartesio_cartesian_task_control.cpp
-src/robot_loader.cpp
-src/robot_sense.cpp
-src/robot_move.cpp
-src/node_provider.cpp
+# the library
+add_library(tree_hhcm SHARED 
+  src/cartesio_solve.cpp
+  src/cartesio_loader.cpp
+  src/cartesio_cartesian_task_control.cpp
+  src/robot_loader.cpp
+  src/robot_sense.cpp
+  src/robot_move.cpp
+  src/node_provider.cpp
+  src/tree_hhcm.cpp
+  src/common.cpp
+  src/load_pose_from_config.cpp
+  )
 
-)
-
-target_link_libraries(bt_hhcm 
+target_link_libraries(tree_hhcm 
     PUBLIC 
     behaviortree_cpp::behaviortree_cpp 
     cartesian_interface::CartesianInterface
+    cartesian_interface_ros::CartesianInterfaceRos
     rclcpp::rclcpp
     )
 
-target_include_directories(bt_hhcm PUBLIC
+target_include_directories(tree_hhcm PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+
+target_compile_definitions(tree_hhcm PRIVATE  BT_PLUGIN_EXPORT )
+
+# the executable
+add_executable(tree_hhcm_executor src/tree_hhcm_main.cpp)
+
+target_link_libraries(tree_hhcm_executor
+    PRIVATE
+    tree_hhcm
+    )
+
+install(
+    TARGETS 
+    tree_hhcm 
+    tree_hhcm_executor
+    EXPORT ${PROJECT_NAME}Targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+    )
+
+export_project()

@@ -1,4 +1,4 @@
-#include <bt_hhcm/cartesio/cartesio_loader.h>
+#include <tree_hhcm/cartesio/cartesio_loader.h>
 
 
 tree::CartesioLoader::CartesioLoader(std::string name, const BT::NodeConfiguration &config):
@@ -24,7 +24,7 @@ tree::CartesioLoader::CartesioLoader(std::string name, const BT::NodeConfigurati
 
     auto ctx = std::make_shared<XBot::Cartesian::Context>(params, model);
 
-    std::string ikpb_file = Globals::instance().tree_dirname + getInput<std::string>("cartesio_config_path").value();
+    std::string ikpb_file = Globals::instance().parse_shell(getInput<std::string>("ik_problem_path").value());
 
     _p.cout() << "loading ik problem from file " << ikpb_file << "\n";
 
@@ -39,7 +39,13 @@ tree::CartesioLoader::CartesioLoader(std::string name, const BT::NodeConfigurati
         _p.cout() << "CartesIO configuration succeeded \n";
     }
 
+    _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci);
+
     setOutput<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio", _ci);
+
+    setOutput<XBot::ModelInterface::Ptr>("model", model);
+
+    setOutput<XBot::Cartesian::RosServerClass::Ptr>("ros_server", _ros_server);
 }
 
 BT::NodeStatus tree::CartesioLoader::tick()
@@ -51,9 +57,11 @@ BT::PortsList tree::CartesioLoader::providedPorts()
 {
     return {
         BT::InputPort<XBot::ConfigOptions>("model_config"),
-        BT::InputPort<std::string>("cartesio_config_path"),
+        BT::InputPort<std::string>("ik_problem_path"),
         BT::InputPort<std::string>("cartesio_log_path"),
-        BT::OutputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio")
+        BT::OutputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio"),
+        BT::OutputPort<XBot::Cartesian::RosServerClass::Ptr>("ros_server"),
+        BT::OutputPort<XBot::ModelInterface::Ptr>("model")
     };
 }
 

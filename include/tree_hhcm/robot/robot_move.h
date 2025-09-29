@@ -1,7 +1,7 @@
-#ifndef BT_HHCM_ROBOT_MOVE_H
-#define BT_HHCM_ROBOT_MOVE_H
+#ifndef tree_hhcm_ROBOT_MOVE_H
+#define tree_hhcm_ROBOT_MOVE_H
 
-#include <bt_hhcm/common/common.h>
+#include <tree_hhcm/common/common.h>
 #include <xbot2_interface/robotinterface2.h>
 
 // behavior tree
@@ -30,4 +30,4 @@ private:
 
 }
 
-#endif // BT_HHCM_ROBOT_MOVE_H
+#endif // tree_hhcm_ROBOT_MOVE_H

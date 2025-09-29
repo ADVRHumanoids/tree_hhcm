@@ -1,17 +1,16 @@
-#include <bt_hhcm/cartesio/cartesio_cartesian_task_control.h>
+#include <tree_hhcm/cartesio/cartesio_cartesian_task_control.h>
+#include <tree_hhcm/common/config_value.h>
 
-tree::CartesioTaskControl::CartesioTaskControl(std::string name, const BT::NodeConfiguration &config):
-    BT::StatefulActionNode(name, config),
-    _p(*this)
+tree::CartesioTaskControl::CartesioTaskControl(std::string name, const BT::NodeConfiguration &config) : BT::StatefulActionNode(name, config),
+                                                                                                        _p(*this)
 {
-
 }
 
 BT::NodeStatus tree::CartesioTaskControl::onStart()
 {
-    _ci = getInput<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio_ptr").value();
+    _ci = getInput<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio").value();
 
-    if(_ci)
+    if (_ci)
     {
         _p.cout() << "got ci \n";
     }
@@ -25,43 +24,45 @@ BT::NodeStatus tree::CartesioTaskControl::onStart()
     std::string task_name;
     getInput("task_name", task_name);
 
-    if(task_name.empty())
+    if (task_name.empty())
     {
         _p.cerr() << "missing required input [task_name] \n";
         return BT::NodeStatus::FAILURE;
     }
-
 
     auto task = _ci->getTask(task_name);
     _task = std::dynamic_pointer_cast<XBot::Cartesian::CartesianTask>(task);
 
     _p.setHeader(name() + " (" + task->getName() + ")");
 
-    if(!_task)
+    if (!_task)
     {
         _p.cerr() << "task type invalid (" << typeid(*task).name() << ") \n";
         return BT::NodeStatus::FAILURE;
     }
 
-    // get velocity
-    if(getInput<std::string>("velocity").has_value())
+    // set task active/inactive
+    bool active = getInput<bool>("active").value_or(true);
+    task->setActivationState(active ? XBot::Cartesian::ActivationState::Enabled : XBot::Cartesian::ActivationState::Disabled);
+
+    if (!active)
     {
-        auto vref_vec = YAML::Load(getInput<std::string>("velocity").value()).as<std::vector<double>>();
+        _p.cout() << "task set inactive, returning SUCCESS \n";
+        return BT::NodeStatus::SUCCESS;
+    }
 
-        if(vref_vec.size() != 6)
-        {
-            throw std::invalid_argument("invalid velocity size != 6");
-        }
+    // get velocity
+    if (getInput<Eigen::Vector6d>("velocity").has_value())
+    {
+        _vref = getInput<Eigen::Vector6d>("velocity").value();
 
-        _vref = Eigen::Vector6d::Map(vref_vec.data());
-
-        if(getInput<bool>("local").value_or(false))
+        if (getInput<bool>("local").value_or(false))
         {
             Eigen::Affine3d T0;
             _task->getCurrentPose(T0);
 
-            _vref.head<3>() = T0.linear()*_vref.head<3>();
-            _vref.tail<3>() = T0.linear()*_vref.tail<3>();
+            _vref.head<3>() = T0.linear() * _vref.head<3>();
+            _vref.tail<3>() = T0.linear() * _vref.tail<3>();
         }
 
         _p.cout() << "got velocity reference " << _vref.transpose() << ", setting velocity ctrl \n";
@@ -70,29 +71,29 @@ BT::NodeStatus tree::CartesioTaskControl::onStart()
     }
 
     // get position
-    if(getInput<std::string>("pose").has_value())
+    if (getInput<Eigen::Affine3d>("pose").has_value())
     {
-        if(getInput<std::string>("velocity").has_value())
+        if (getInput<Eigen::Vector6d>("velocity").has_value())
         {
             throw std::invalid_argument("cannot set both velocity and pose target");
         }
 
-        auto pref_vec = YAML::Load(getInput<std::string>("pose").value()).as<std::vector<double>>();
+        getInput("goal_velocity_threshold", _goal_velocity_threshold);
 
-        if(pref_vec.size() != 7)
-        {
-            throw std::invalid_argument("invalid pose size != 7");
-        }
+        _Tref = getInput<Eigen::Affine3d>("pose").value();
 
-        Eigen::Affine3d T0;
-        _task->getCurrentPose(T0);
-
-        _Tref.translation() = T0.translation() + Eigen::Vector3d::Map(pref_vec.data());
-        _Tref.linear() = T0.linear() * Eigen::Quaterniond(pref_vec.data() + 3).normalized().toRotationMatrix();
-        _p.cout() << "got pose reference:\n" << _Tref.matrix() << "\n";
+        _p.cout() << "got pose reference:\n"
+                  << _Tref.matrix() << "\n";
         _velocity_ctrl = false;
 
-        if(_trj_time <= 0)
+        ConfigValue<double> trj_time_cfg;
+        if (!getInput("trj_time", trj_time_cfg))
+        {
+            throw std::invalid_argument("missing required input [trj_time]");
+        }
+        _trj_time = trj_time_cfg.value();
+
+        if (_trj_time <= 0)
         {
             throw std::invalid_argument("invalid trj time <= 0");
         }
@@ -101,8 +102,6 @@ BT::NodeStatus tree::CartesioTaskControl::onStart()
 
         _task->setPoseTarget(_Tref, _trj_time);
     }
-    
-
 
     _time = 0;
 
@@ -111,18 +110,22 @@ BT::NodeStatus tree::CartesioTaskControl::onStart()
 
 BT::NodeStatus tree::CartesioTaskControl::onRunning()
 {
-    if(_task && _velocity_ctrl)
+    if (_task && _velocity_ctrl)
     {
         _task->setVelocityReference(_vref);
     }
 
-    if(_task && !_velocity_ctrl && _task->getTaskState() == XBot::Cartesian::State::Online)
+    if (_task && !_velocity_ctrl && _task->getTaskState() == XBot::Cartesian::State::Online)
     {
-        _p.cout() << "pose trajectory finished \n";
-        return BT::NodeStatus::SUCCESS;
+        if ((_ci->getModel()->getJointVelocity().array() < _goal_velocity_threshold).all())
+        {
+            _p.cout() << "task reached target with zero velocity \n";
+            return BT::NodeStatus::SUCCESS;
+        }
+        return BT::NodeStatus::RUNNING;
     }
 
-    if(_task && _velocity_ctrl && _trj_time > 0 && _time >= _trj_time)
+    if (_task && _velocity_ctrl && _trj_time > 0 && _time >= _trj_time)
     {
         _p.cout() << "trajectory finished \n";
         return BT::NodeStatus::SUCCESS;
@@ -133,17 +136,18 @@ BT::NodeStatus tree::CartesioTaskControl::onRunning()
 
 void tree::CartesioTaskControl::onHalted()
 {
-
 }
 
 BT::PortsList tree::CartesioTaskControl::providedPorts()
 {
     return {
-        BT::InputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio_ptr"),
+        BT::InputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio"),
         BT::InputPort<std::string>("task_name"),
         BT::InputPort<bool>("local"),
-        BT::InputPort<std::string>("pose"),
-        BT::InputPort<double>("trj_time"),
-        BT::InputPort<std::string>("velocity"),
+        BT::InputPort<bool>("active", true, "set task active/inactive"),
+        BT::InputPort<Eigen::Affine3d>("pose"),
+        BT::InputPort<ConfigValue<double>>("trj_time"),
+        BT::InputPort<Eigen::Vector6d>("velocity"),
+        BT::InputPort<double>("goal_velocity_threshold"),
     };
 }

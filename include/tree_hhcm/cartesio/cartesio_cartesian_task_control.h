@@ -10,9 +10,10 @@
 #include <cartesian_interface/problem/Cartesian.h>
 
 // utils
-#include <bt_hhcm/common/common.h>
+#include <tree_hhcm/common/common.h>
 
 namespace tree {
+
 class CartesioTaskControl : public BT::StatefulActionNode {
 
 public:
@@ -33,6 +34,8 @@ private:
     Eigen::Affine3d _Tref;
     bool _velocity_ctrl = false;
     Printer _p;
+    double _time = 0, _trj_time = 0;
+    double _goal_velocity_threshold = 0.01; // [rad/s]
 
 };
 }

@@ -1,4 +1,4 @@
-#include <bt_hhcm/robot/robot_move.h>
+#include <tree_hhcm/robot/robot_move.h>
 #include <yaml-cpp/yaml.h>
 
 namespace tree {
@@ -28,11 +28,10 @@ BT::NodeStatus RobotMove::tick()
         _robot->setPositionReference(_q);
     }
 
-    std::string qref_map_str;
-    if(getInput("qref_map", qref_map_str))
+    XBot::JointNameMap qref_map;
+    if(getInput("qref_map", qref_map))
     {
-        YAML::Node y = YAML::Load("{" + qref_map_str + "}");
-        _robot->mapToQ(y.as<std::unordered_map<std::string, double>>(), _q);
+        _robot->mapToQ(qref_map, _q);
         _robot->setPositionReference(_q);
     }
 
@@ -51,7 +50,7 @@ BT::PortsList RobotMove::providedPorts()
         BT::InputPort<bool>("enable_pos"),
         BT::InputPort<XBot::RobotInterface::Ptr>("robot"),
         BT::InputPort<Eigen::VectorXd>("qref"),
-        BT::InputPort<YAML::Node>("qref_map")
+        BT::InputPort<XBot::JointNameMap>("qref_map")
     };
 }
 

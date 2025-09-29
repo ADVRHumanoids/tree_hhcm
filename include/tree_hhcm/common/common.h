@@ -1,9 +1,11 @@
-#ifndef _BT_HHCM_GLOBALS_H
-#define _BT_HHCM_GLOBALS_H
+#ifndef _tree_hhcm_GLOBALS_H
+#define _tree_hhcm_GLOBALS_H
 
 #include <string>
 #include <behaviortree_cpp/tree_node.h>
 #include <rclcpp/rclcpp.hpp>
+
+#include <tree_hhcm/common/parsers.h>
 
 namespace tree {
 
@@ -12,6 +14,8 @@ class Printer {
 public:
 
     Printer(const BT::TreeNode& n): _name(n.name().c_str()) {};
+
+    Printer(std::string n): _name(n) {};
 
     void setHeader(std::string hdr)
     {
@@ -45,12 +49,15 @@ public:
     double tree_dt = 0.0;
     std::string tree_dirname;
 
+    std::string parse_shell(std::string str) const;
+
+    std::string check_output(std::string cmd) const;
+    
 private:
 
     Globals();
 
 };
-
 }
 
 #endif // GLOBALS_H

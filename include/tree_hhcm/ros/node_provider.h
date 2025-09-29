@@ -1,7 +1,7 @@
-#ifndef _BT_HHCM_NODEPROVIDER_H
-#define _BT_HHCM_NODEPROVIDER_H
+#ifndef _tree_hhcm_NODEPROVIDER_H
+#define _tree_hhcm_NODEPROVIDER_H
 
-#include <bt_hhcm/common/common.h>
+#include <tree_hhcm/common/common.h>
 
 // behavior tree
 #include <behaviortree_cpp/bt_factory.h>
