@@ -25,6 +25,14 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::None);
 
+    // remove all arguments after '--ros-args'
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--ros-args") {
+            argc = i;
+            break;
+        }
+    }
+
     // Register SIGINT handler
     std::signal(SIGINT, sigint_handler);
     // argument parser
@@ -32,16 +40,19 @@ int main(int argc, char **argv)
     double rate = 100.0;
     std::string name = "tree_main";
     std::vector<std::string> plugins;
+    std::string xacro_args;
 
     bool dont_sync = false;
+    bool use_xacro = false;
 
-    const char* const short_opts = "hr:n:p:d";
+    const char* const short_opts = "hr:n:p:da:";
     const option long_opts[] = {
         {"help", no_argument, nullptr, 'h'},
         {"rate", required_argument, nullptr, 'r'},
         {"name", required_argument, nullptr, 'n'},
         {"plugins", required_argument, nullptr, 'p'},
         {"dont-sync", no_argument, nullptr, 'd'},
+        {"xacro-args", required_argument, nullptr, 'a'},
         {nullptr, 0, nullptr, 0}
     };
 
@@ -49,8 +60,9 @@ int main(int argc, char **argv)
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
         switch (opt) {
             case 'h':
-                std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] [--dont-sync] <tree_path>\n";
+                std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] [--dont-sync] [--xacro-args <arg>] <tree_path>\n";
                 std::cout << "       --plugins/-p can be specified multiple times.\n";
+                std::cout << "       --xacro-args/-a can be specified multiple times.\n";
                 std::cout << "       --dont-sync/-d disables time synchronization.\n";
                 return 0;
             case 'r':
@@ -65,6 +77,9 @@ int main(int argc, char **argv)
             case 'd':
                 dont_sync = true;
                 break;
+            case 'a':
+                xacro_args += " " + std::string(optarg);
+                break;
             default:
                 std::cerr << "Unknown option. Use --help for usage.\n";
                 return 1;
@@ -75,7 +90,10 @@ int main(int argc, char **argv)
         tree_path = std::string(argv[optind]);
     } else {
         std::cerr << "Error: tree_path argument is required.\n";
-        std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] <tree_path>\n";
+        std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] [--dont-sync] [--xacro-args <arg>] <tree_path>\n";
+        std::cout << "       --plugins/-p can be specified multiple times.\n";
+        std::cout << "       --xacro-args/-a can be specified multiple times.\n";
+        std::cout << "       --dont-sync/-d disables time synchronization.\n";
         return 1;
     }
 
@@ -98,12 +116,18 @@ int main(int argc, char **argv)
     if (!plugins.empty()) {
         p.cout() << "plugins: ";
         for (const auto& plugin : plugins) {
-            std::cout << plugin << " ";
+            std::cout << plugin << ", ";
         }
         std::cout << "\n";
     }
+    if (!xacro_args.empty()) {
+        p.cout() << "xacro_args: " << xacro_args << "\n";
+    }
     p.cout() << "rate: " << rate << " Hz\n";
 
+    // preprocess xacro if required
+    xacro_args += " tree_dirname:=" + tree_dirname;
+    std::string tree_string = tree::Globals::instance().check_output("xacro " + tree_path + xacro_args);
 
     // main logic
     BT::BehaviorTreeFactory factory;
@@ -115,7 +139,7 @@ int main(int argc, char **argv)
     // build tree
     auto blackboard = BT::Blackboard::create();
     tree::ConfigValueBase::root_tree_blackboard = blackboard;
-    auto tree = factory.createTreeFromFile(tree_path, blackboard);
+    auto tree = factory.createTreeFromText(tree_string, blackboard);
 
     // run tree until ctrl+c
     std::chrono::duration<double> dt(1.0/rate);
