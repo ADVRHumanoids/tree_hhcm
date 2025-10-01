@@ -10,14 +10,18 @@
 
 namespace tree {
 
-class RobotMove : public BT::SyncActionNode
+class RobotMove : public BT::StatefulActionNode
 {
 
 public:
 
     RobotMove(std::string name, const BT::NodeConfiguration &config);
 
-    BT::NodeStatus tick() override;
+    BT::NodeStatus onStart() override;
+
+    BT::NodeStatus onRunning() override;
+
+    void onHalted() override;
 
     static BT::PortsList providedPorts();
 

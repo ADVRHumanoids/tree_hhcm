@@ -32,6 +32,25 @@ tree::RobotLoader::RobotLoader(std::string name, const BT::NodeConfiguration &co
         _p.cout() << "Set output 'robot' with type XBot::RobotInterface::Ptr" << std::endl;
 
         setOutput<XBot::RobotInterface::Ptr>("robot", _robot);
+
+        Eigen::VectorXd q_start = _robot->getPositionReferenceFeedback();
+        setOutput<Eigen::VectorXd>("q_start", q_start);
+
+        std::vector<std::string> disabled_joints;
+        if(getInput("disabled_joints", disabled_joints))
+        {
+            XBot::CtrlModeMap ctrl;
+            for(const auto& jname : disabled_joints)
+            {
+                if(!_robot->hasJoint(jname))
+                {
+                    throw BT::RuntimeError("RobotLoader: robot has no joint named " + jname);
+                }
+                ctrl[jname] = XBot::ControlMode::None();
+                _p.cout() << "disabling joint " << jname << "\n";
+            }
+            _robot->setControlMode(ctrl);
+        }
     }
     else 
     {
@@ -98,8 +117,10 @@ BT::PortsList tree::RobotLoader::providedPorts()
         BT::InputPort<std::string>("urdf"),
         BT::InputPort<std::string>("srdf"),
         BT::InputPort<bool>("load_robot"),
+        BT::InputPort<std::vector<std::string>>("disabled_joints"),
         BT::OutputPort<XBot::ConfigOptions>("config"),
-        BT::OutputPort<XBot::RobotInterface::Ptr>("robot")
+        BT::OutputPort<XBot::RobotInterface::Ptr>("robot"),
+        BT::OutputPort<Eigen::VectorXd>("q_start")
     };
 }
 

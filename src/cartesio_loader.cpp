@@ -15,6 +15,15 @@ tree::CartesioLoader::CartesioLoader(std::string name, const BT::NodeConfigurati
     // load robot model
     XBot::ModelInterface::Ptr model = XBot::ModelInterface::getModel(model_cfg);
 
+    // set initial position if provided
+    Eigen::VectorXd q_start;
+    if(getInput("q_start", q_start))
+    {
+        _p.cout() << "CartesioLoader: setting initial position from input [q_start] = " << q_start.transpose().format(2) << "\n";
+        model->setJointPosition(q_start);
+        model->update();
+    }
+
     // configure cartesio
     std::string cartesio_log_path = "/tmp";
     getInput("cartesio_log_path", cartesio_log_path);
@@ -59,6 +68,7 @@ BT::PortsList tree::CartesioLoader::providedPorts()
         BT::InputPort<XBot::ConfigOptions>("model_config"),
         BT::InputPort<std::string>("ik_problem_path"),
         BT::InputPort<std::string>("cartesio_log_path"),
+        BT::InputPort<Eigen::VectorXd>("q_start"),
         BT::OutputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio"),
         BT::OutputPort<XBot::Cartesian::RosServerClass::Ptr>("ros_server"),
         BT::OutputPort<XBot::ModelInterface::Ptr>("model")

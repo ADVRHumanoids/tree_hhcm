@@ -61,6 +61,8 @@ namespace tree
         _model->update();
         _time += _dt;
 
+        setOutput("solution_q", _qnext);
+
         if (_ros_server)
         {
             _ros_server->run();
@@ -77,7 +79,9 @@ namespace tree
     {
         return {
             BT::InputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio"),
-            BT::InputPort<XBot::Cartesian::RosServerClass::Ptr>("ros_server")};
+            BT::InputPort<XBot::Cartesian::RosServerClass::Ptr>("ros_server"),
+            BT::OutputPort<Eigen::VectorXd>("solution_q", "current joint position"),
+        };
     }
 
 } // namespace tree

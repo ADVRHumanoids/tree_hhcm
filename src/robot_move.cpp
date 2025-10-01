@@ -4,7 +4,12 @@
 namespace tree {
 
 RobotMove::RobotMove(std::string name, const BT::NodeConfiguration &config):
-    BT::SyncActionNode(name, config), _p(*this)
+    BT::StatefulActionNode(name, config), _p(*this)
+{
+    
+}
+
+BT::NodeStatus RobotMove::onStart()
 {
     if(!getInput("robot", _robot))
     {
@@ -19,17 +24,18 @@ RobotMove::RobotMove(std::string name, const BT::NodeConfiguration &config):
         _robot->setControlMode(XBot::ControlMode::Position());
     }
 
+    return BT::NodeStatus::RUNNING;
 }
 
-BT::NodeStatus RobotMove::tick()
+BT::NodeStatus RobotMove::onRunning()
 {
+    XBot::JointNameMap qref_map;
+    
     if(getInput("qref", _q))
     {
         _robot->setPositionReference(_q);
     }
-
-    XBot::JointNameMap qref_map;
-    if(getInput("qref_map", qref_map))
+    else if(getInput("qref_map", qref_map))
     {
         _robot->mapToQ(qref_map, _q);
         _robot->setPositionReference(_q);
@@ -42,6 +48,10 @@ BT::NodeStatus RobotMove::tick()
     // use it inside a <Parallel> node with some other node that returns SUCCESS/FAILURE
     // to stop the execution
     return BT::NodeStatus::RUNNING;
+}
+
+void RobotMove::onHalted()
+{
 }
 
 BT::PortsList RobotMove::providedPorts()
