@@ -18,6 +18,7 @@ add_library(tree_hhcm SHARED
   src/robot_sense.cpp
   src/robot_move.cpp
   src/node_provider.cpp
+  src/wait_setbool.cpp
   src/tree_hhcm.cpp
   src/common.cpp
   src/load_pose_from_config.cpp

@@ -3,6 +3,7 @@
 #include <tree_hhcm/common/load_pose_from_config.h>
 
 #include <tree_hhcm/ros/node_provider.h>
+#include <tree_hhcm/ros/wait_setbool.h>
 
 #include <tree_hhcm/robot/robot_loader.h>
 #include <tree_hhcm/robot/robot_move.h>
@@ -16,6 +17,7 @@ BT_REGISTER_NODES(factory)
 {
     factory.registerNodeType<tree::LoadPoseFromConfig>("LoadPoseFromConfig");
     factory.registerNodeType<tree::NodeProvider>("NodeProvider");
+    factory.registerNodeType<tree::WaitSetBool>("WaitSetBool");
     factory.registerNodeType<tree::RobotLoader>("RobotLoader");
     factory.registerNodeType<tree::RobotSense>("RobotSense");
     factory.registerNodeType<tree::RobotMove>("RobotMove");
