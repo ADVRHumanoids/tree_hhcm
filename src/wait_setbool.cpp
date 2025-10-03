@@ -3,6 +3,14 @@
 tree::WaitSetBool::WaitSetBool(const std::string &name, const BT::NodeConfiguration &config):
     BT::StatefulActionNode(name, config), _p(*this)
 {
+    
+}
+
+BT::NodeStatus tree::WaitSetBool::onStart()
+{
+    _time = 0.0;
+    _print_time = 0.0;
+
     std::string srv_name;
     if(!getInput("service_name", srv_name))
     {
@@ -23,10 +31,6 @@ tree::WaitSetBool::WaitSetBool(const std::string &name, const BT::NodeConfigurat
             return true;
         });
 
-}
-
-BT::NodeStatus tree::WaitSetBool::onStart()
-{
     _value.reset();
     _p.cout() << "waiting for service call on [" << _srv->get_service_name() << "]\n";
     return BT::NodeStatus::RUNNING;
@@ -35,6 +39,14 @@ BT::NodeStatus tree::WaitSetBool::onStart()
 BT::NodeStatus tree::WaitSetBool::onRunning()
 {
     rclcpp::spin_some(_node);
+
+    if(_time >= _print_time)
+    {
+        _p.cout() << "waiting for service call on [" << _srv->get_service_name() << "]\n";
+        _print_time += 1.0;
+    }
+
+    _time += Globals::instance().tree_dt;
 
     if(_value.has_value())
     {

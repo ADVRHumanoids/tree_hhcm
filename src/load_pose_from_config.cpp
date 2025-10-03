@@ -103,8 +103,12 @@ BT::NodeStatus LoadPoseFromConfig::tick()
     pose.translation() = Eigen::Vector3d::Map(cfg["pos"].as<std::vector<double>>().data());
     pose.linear() = Eigen::Quaterniond(Eigen::Vector4d::Map(cfg["rot"].as<std::vector<double>>().data())).normalized().toRotationMatrix();
 
+    // get offset
+    Eigen::Affine3d offset = Eigen::Affine3d::Identity();
+    getInput("offset", offset);
+
     // set output
-    setOutput("pose", w_T_parent * pose);
+    setOutput("pose", offset * w_T_parent * pose);
 
     setOutput("num_poses", num_poses);
 
@@ -117,6 +121,7 @@ BT::PortsList LoadPoseFromConfig::providedPorts()
         BT::InputPort<XBot::ModelInterface::Ptr>("model"),
         BT::InputPort<std::string>("config"),
         BT::InputPort<std::string>("frame"),
+        BT::InputPort<Eigen::Affine3d>("offset"),
         BT::InputPort<int>("idx", 0, "index of the pose to load, starting from 0"),
         BT::OutputPort<Eigen::Affine3d>("pose"),
         BT::OutputPort<int>("num_poses")

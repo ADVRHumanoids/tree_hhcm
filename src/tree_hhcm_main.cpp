@@ -162,6 +162,7 @@ int main(int argc, char **argv)
             t_report_next += stats_dt;
         }
 
+        // handle tree result
         if(status == BT::NodeStatus::SUCCESS || status == BT::NodeStatus::FAILURE)
         {
             p.cout() << "Tree finished with status " << toStr(status) << "\n";
@@ -174,5 +175,7 @@ int main(int argc, char **argv)
         }
 
     }
+
+    tree::ConfigValueBase::root_tree_blackboard.reset();
 
 }

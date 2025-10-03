@@ -5,57 +5,6 @@
 tree::RobotLoader::RobotLoader(std::string name, const BT::NodeConfiguration &config):
     BT::SyncActionNode(name, config), _p(*this)
 {
-    XBot::ConfigOptions cfg;
-
-    if(getInput<std::string>("urdf").has_value())
-    {
-        cfg = parse_from_inputs();
-    }
-    else
-    {
-        cfg = parse_from_ros2();
-    }
-    
-    
-    _p.cout() << "Set output 'config' with type XBot::ConfigOptions" << std::endl;
-    setOutput<XBot::ConfigOptions>("config", cfg);
-
-    if(getInput<bool>("load_robot").value_or(true))
-    {
-        _robot = XBot::RobotInterface::getRobot(cfg);
-
-        if(!_robot)
-        {
-            throw BT::RuntimeError("RobotLoader: error creating RobotInterface");
-        }
-
-        _p.cout() << "Set output 'robot' with type XBot::RobotInterface::Ptr" << std::endl;
-
-        setOutput<XBot::RobotInterface::Ptr>("robot", _robot);
-
-        Eigen::VectorXd q_start = _robot->getPositionReferenceFeedback();
-        setOutput<Eigen::VectorXd>("q_start", q_start);
-
-        std::vector<std::string> disabled_joints;
-        if(getInput("disabled_joints", disabled_joints))
-        {
-            XBot::CtrlModeMap ctrl;
-            for(const auto& jname : disabled_joints)
-            {
-                if(!_robot->hasJoint(jname))
-                {
-                    throw BT::RuntimeError("RobotLoader: robot has no joint named " + jname);
-                }
-                ctrl[jname] = XBot::ControlMode::None();
-                _p.cout() << "disabling joint " << jname << "\n";
-            }
-            _robot->setControlMode(ctrl);
-        }
-    }
-    else 
-    {
-        _p.cout() << "Skipping robot loading" << std::endl;
-    }
 
 }
 
@@ -105,6 +54,60 @@ XBot::ConfigOptions tree::RobotLoader::parse_from_ros2()
 
 BT::NodeStatus tree::RobotLoader::tick()
 {
+    XBot::ConfigOptions cfg;
+
+    if(getInput<std::string>("urdf").has_value())
+    {
+        cfg = parse_from_inputs();
+    }
+    else
+    {
+        cfg = parse_from_ros2();
+    }
+    
+    
+    _p.cout() << "Set output 'config' with type XBot::ConfigOptions" << std::endl;
+    setOutput<XBot::ConfigOptions>("config", cfg);
+
+    if(getInput<bool>("load_robot").value_or(true))
+    {
+        _robot = XBot::RobotInterface::getRobot(cfg);
+
+        if(!_robot)
+        {
+            throw BT::RuntimeError("RobotLoader: error creating RobotInterface");
+        }
+
+        _p.cout() << "Set output 'robot' with type XBot::RobotInterface::Ptr" << std::endl;
+
+        setOutput<XBot::RobotInterface::Ptr>("robot", _robot);
+
+        Eigen::VectorXd q_start = _robot->getPositionReferenceFeedback();
+        setOutput<Eigen::VectorXd>("q_start", q_start);
+
+        _robot->setControlMode(XBot::ControlMode::Position());
+
+        std::vector<std::string> disabled_joints;
+        if(getInput("disabled_joints", disabled_joints))
+        {
+            XBot::CtrlModeMap ctrl;
+            for(const auto& jname : disabled_joints)
+            {
+                if(!_robot->hasJoint(jname))
+                {
+                    throw BT::RuntimeError("RobotLoader: robot has no joint named " + jname);
+                }
+                ctrl[jname] = XBot::ControlMode::None();
+                _p.cout() << "disabling joint " << jname << "\n";
+            }
+            _robot->setControlMode(ctrl);
+        }
+    }
+    else 
+    {
+        _p.cout() << "Skipping robot loading" << std::endl;
+    }
+
     return BT::NodeStatus::SUCCESS;
 }
 

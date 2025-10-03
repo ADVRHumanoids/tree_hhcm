@@ -5,6 +5,11 @@ namespace tree {
 NodeProvider::NodeProvider(std::string name, const BT::NodeConfiguration &config)
     : BT::SyncActionNode(name, config), _p(*this)
 {
+    
+}
+
+BT::NodeStatus tree::NodeProvider::tick()
+{
     std::string node_name = "tree_hhcm_node";
     if(!getInput("node_name", node_name))
     {
@@ -16,10 +21,7 @@ NodeProvider::NodeProvider(std::string name, const BT::NodeConfiguration &config
     _p.cout() << "Set output 'node' with type rclcpp::Node::SharedPtr" << std::endl;
     setOutput<rclcpp::Node::SharedPtr>("node", _node);
 
-}
 
-BT::NodeStatus tree::NodeProvider::tick()
-{
     return BT::NodeStatus::SUCCESS;
 }
 

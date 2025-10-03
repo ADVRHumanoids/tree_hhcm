@@ -8,6 +8,7 @@
 #include <tree_hhcm/robot/robot_loader.h>
 #include <tree_hhcm/robot/robot_move.h>
 #include <tree_hhcm/robot/robot_sense.h>
+#include <tree_hhcm/robot/robot_gripper_ctrl.h>
 
 #include <tree_hhcm/cartesio/cartesio_cartesian_task_control.h>
 #include <tree_hhcm/cartesio/cartesio_loader.h>
@@ -21,6 +22,7 @@ BT_REGISTER_NODES(factory)
     factory.registerNodeType<tree::RobotLoader>("RobotLoader");
     factory.registerNodeType<tree::RobotSense>("RobotSense");
     factory.registerNodeType<tree::RobotMove>("RobotMove");
+    factory.registerNodeType<tree::RobotGripperCtrl>("RobotGripperCtrl");
     factory.registerNodeType<tree::CartesioLoader>("CartesioLoader");
     factory.registerNodeType<tree::CartesioSolve>("CartesioSolve");
     factory.registerNodeType<tree::CartesioTaskControl>("CartesioTaskControl");

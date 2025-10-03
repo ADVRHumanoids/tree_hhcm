@@ -16,14 +16,6 @@ BT::NodeStatus RobotMove::onStart()
         throw BT::RuntimeError("RobotMove: missing required input [robot]");
     }
 
-    bool enable_pos = getInput<bool>("enable_pos").value_or(true);
-    
-    if(enable_pos)
-    {
-        _p.cout() << "RobotMove: setting control mode to POSITION\n";
-        _robot->setControlMode(XBot::ControlMode::Position());
-    }
-
     return BT::NodeStatus::RUNNING;
 }
 
@@ -57,7 +49,6 @@ void RobotMove::onHalted()
 BT::PortsList RobotMove::providedPorts()
 {
     return {
-        BT::InputPort<bool>("enable_pos"),
         BT::InputPort<XBot::RobotInterface::Ptr>("robot"),
         BT::InputPort<Eigen::VectorXd>("qref"),
         BT::InputPort<XBot::JointNameMap>("qref_map")

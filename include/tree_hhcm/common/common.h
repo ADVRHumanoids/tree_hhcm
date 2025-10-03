@@ -40,6 +40,8 @@ private:
 
 };
 
+
+
 class Globals {
 
 public:
@@ -52,6 +54,10 @@ public:
     std::string parse_shell(std::string str) const;
 
     std::string check_output(std::string cmd) const;
+
+    std::chrono::system_clock::time_point system_time() const;
+
+    double system_time_sec() const;
     
 private:
 

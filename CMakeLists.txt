@@ -17,6 +17,7 @@ add_library(tree_hhcm SHARED
   src/robot_loader.cpp
   src/robot_sense.cpp
   src/robot_move.cpp
+  src/robot_gripper_ctrl.cpp
   src/node_provider.cpp
   src/wait_setbool.cpp
   src/tree_hhcm.cpp

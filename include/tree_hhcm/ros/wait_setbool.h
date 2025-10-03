@@ -24,6 +24,7 @@ private:
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr _srv;
     std::optional<bool> _value;
     Printer _p;
+    double _time, _print_time = 0.0;
 };
 }
 

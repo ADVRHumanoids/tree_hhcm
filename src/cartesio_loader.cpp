@@ -5,6 +5,11 @@ tree::CartesioLoader::CartesioLoader(std::string name, const BT::NodeConfigurati
     BT::SyncActionNode(name, config),
     _p(*this)
 {
+    
+}
+
+BT::NodeStatus tree::CartesioLoader::tick()
+{
     // get robot model config
     XBot::ConfigOptions model_cfg;
     if(!getInput("model_config", model_cfg))
@@ -31,6 +36,8 @@ tree::CartesioLoader::CartesioLoader(std::string name, const BT::NodeConfigurati
     auto params = std::make_shared<XBot::Cartesian::Parameters>(Globals::instance().tree_dt,
                                                                 cartesio_log_path);
 
+    params->setLogEnabled(false);
+
     auto ctx = std::make_shared<XBot::Cartesian::Context>(params, model);
 
     std::string ikpb_file = Globals::instance().parse_shell(getInput<std::string>("ik_problem_path").value());
@@ -55,10 +62,7 @@ tree::CartesioLoader::CartesioLoader(std::string name, const BT::NodeConfigurati
     setOutput<XBot::ModelInterface::Ptr>("model", model);
 
     setOutput<XBot::Cartesian::RosServerClass::Ptr>("ros_server", _ros_server);
-}
-
-BT::NodeStatus tree::CartesioLoader::tick()
-{
+    
     return BT::NodeStatus::SUCCESS;
 }
 
