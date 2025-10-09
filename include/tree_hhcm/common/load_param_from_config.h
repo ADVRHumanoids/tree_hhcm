@@ -21,6 +21,8 @@ private:
     Printer _p;
     static std::map<std::string, YAML::Node> _config_cache;
 
+    void store_all_params(const YAML::Node& cfg, std::string prefix="");
+
     void set_param_to_blackboard(const std::string& output_name, const std::string& output_type, const YAML::Node& cfg);
 
 };

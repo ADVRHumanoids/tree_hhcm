@@ -91,21 +91,7 @@ BT::NodeStatus tree::LoadParamFromConfig::tick()
         }
 
         // load all entries in the map as separate blackboard entries
-        for(auto item : cfg)
-        {
-            std::string key = item.first.as<std::string>();
-            YAML::Node value = item.second;
-
-            std::string value_type = detect_yaml_type(value);
-            if(value_type.empty())
-            {
-                throw BT::RuntimeError("LoadParamFromConfig: cannot detect type of parameter " + key);
-            }
-
-            std::string full_key = output_name + key;
-
-            set_param_to_blackboard(full_key, value_type, value);
-        }
+        store_all_params(cfg, output_name);
     }
     else
     {
@@ -140,7 +126,7 @@ BT::PortsList tree::LoadParamFromConfig::providedPorts()
     };
 }
 
-void LoadParamFromConfig::set_param_to_blackboard(const std::string &output_name, const std::string &output_type, const YAML::Node &cfg)
+void LoadParamFromConfig::set_param_to_blackboard(const std::string &output_name, const std::string &output_type, const YAML::Node &cfg) 
 {
     _p.cout() << "Setting param " << output_name << " of type " << output_type << " value:\n"
               << cfg << "\n";   
@@ -205,5 +191,34 @@ void LoadParamFromConfig::set_param_to_blackboard(const std::string &output_name
     else
     {
         throw BT::RuntimeError("LoadParamFromConfig: unsupported input type [" + output_type + "]");
+    }
+}
+
+
+void tree::LoadParamFromConfig::store_all_params(const YAML::Node &cfg, std::string prefix)
+{
+    for(auto item : cfg)
+    {
+        std::string key = item.first.as<std::string>();
+        YAML::Node value = item.second;
+
+        std::string prefix_dot = prefix.empty() ? "" : prefix + ".";
+
+        if(value.IsMap())
+        {
+            store_all_params(value, prefix_dot + key);
+            continue;
+        }
+
+        std::string value_type = detect_yaml_type(value);
+        
+        if(value_type.empty())
+        {
+            throw BT::RuntimeError("LoadParamFromConfig: cannot detect type of parameter " + key);
+        }
+
+        std::string full_key = prefix_dot + key;
+
+        set_param_to_blackboard(full_key, value_type, value);
     }
 }
