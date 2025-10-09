@@ -7,6 +7,11 @@
 #include <map>
 #include <yaml-cpp/yaml.h>
 
+namespace tree 
+{
+    std::string detect_yaml_type(YAML::Node node);
+}
+
 // Template specialization to converts a string to Position2D.
 namespace BT
 {
@@ -120,6 +125,90 @@ namespace BT
         return output;
     }
 } // end namespace BT
+
+namespace YAML
+{
+
+template <>
+struct convert<Eigen::Affine3d>
+{
+    static Node encode(const Eigen::Affine3d& d)
+    {
+        Node n;
+        n.push_back(d.translation().x());
+        n.push_back(d.translation().y());
+        n.push_back(d.translation().z());
+        Eigen::Quaterniond q(d.linear());
+        n.push_back(q.x());
+        n.push_back(q.y());
+        n.push_back(q.z());
+        n.push_back(q.w());
+        return n;
+    }
+
+    static bool decode(const Node& node, Eigen::Affine3d& d)
+    {
+        d.setIdentity();
+        
+        // map format
+        if(node.IsMap())
+        {
+            if(auto pos = node["pos"])
+            {
+                if(!pos.IsSequence() || pos.size() != 3)
+                {
+                    return false;
+                }
+                d.translation().x() = pos[0].as<double>();
+                d.translation().y() = pos[1].as<double>();
+                d.translation().z() = pos[2].as<double>();
+            }
+            else
+            {
+                return false;
+            }
+
+            if(auto rot = node["rot"])
+            {
+                if(!rot.IsSequence() || rot.size() != 4)
+                {
+                    return false;
+                }
+                d.linear() = Eigen::Quaterniond(rot[3].as<double>(),
+                                                rot[0].as<double>(),
+                                                rot[1].as<double>(),
+                                                rot[2].as<double>()).normalized().toRotationMatrix();
+            }
+
+            return true;
+        }
+
+        // it must be an array!
+        if (!node.IsSequence() || (node.size() != 3 && node.size() != 7))
+        {
+            return false;
+        }
+
+        d = Eigen::Affine3d::Identity();
+        d.translation().x() = node[0].as<double>();
+        d.translation().y() = node[1].as<double>();
+        d.translation().z() = node[2].as<double>();
+
+        if(node.size() == 7)
+        {
+            d.linear() = Eigen::Quaterniond(node[6].as<double>(),
+                                            node[3].as<double>(),
+                                            node[4].as<double>(),
+                                            node[5].as<double>()).normalized().toRotationMatrix();
+        }
+
+        return true;
+    }
+
+};
+
+
+}
 
 
 #endif

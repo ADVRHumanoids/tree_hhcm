@@ -41,11 +41,12 @@ int main(int argc, char **argv)
     std::string name = "tree_main";
     std::vector<std::string> plugins;
     std::string xacro_args;
+    std::vector<std::string> params;
 
     bool dont_sync = false;
     bool use_xacro = false;
 
-    const char* const short_opts = "hr:n:p:da:";
+    const char* const short_opts = "hr:n:p:da:m:";
     const option long_opts[] = {
         {"help", no_argument, nullptr, 'h'},
         {"rate", required_argument, nullptr, 'r'},
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
         {"plugins", required_argument, nullptr, 'p'},
         {"dont-sync", no_argument, nullptr, 'd'},
         {"xacro-args", required_argument, nullptr, 'a'},
+        {"param", required_argument, nullptr, 'm'},
         {nullptr, 0, nullptr, 0}
     };
 
@@ -60,8 +62,9 @@ int main(int argc, char **argv)
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
         switch (opt) {
             case 'h':
-                std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] [--dont-sync] [--xacro-args <arg>] <tree_path>\n";
+                std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] [--param <param>] [--dont-sync] [--xacro-args <arg>] <tree_path>\n";
                 std::cout << "       --plugins/-p can be specified multiple times.\n";
+                std::cout << "       --param/-m can be specified multiple times.\n";
                 std::cout << "       --xacro-args/-a can be specified multiple times.\n";
                 std::cout << "       --dont-sync/-d disables time synchronization.\n";
                 return 0;
@@ -80,6 +83,9 @@ int main(int argc, char **argv)
             case 'a':
                 xacro_args += " " + std::string(optarg);
                 break;
+            case 'm':
+                params.push_back(std::string(optarg));
+                break;
             default:
                 std::cerr << "Unknown option. Use --help for usage.\n";
                 return 1;
@@ -90,8 +96,9 @@ int main(int argc, char **argv)
         tree_path = std::string(argv[optind]);
     } else {
         std::cerr << "Error: tree_path argument is required.\n";
-        std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] [--dont-sync] [--xacro-args <arg>] <tree_path>\n";
+        std::cout << "Usage: " << argv[0] << " [--rate <rate>] [--name <name>] [--plugins <plugin>] [--param <param>] [--dont-sync] [--xacro-args <arg>] <tree_path>\n";
         std::cout << "       --plugins/-p can be specified multiple times.\n";
+        std::cout << "       --param/-m can be specified multiple times.\n";
         std::cout << "       --xacro-args/-a can be specified multiple times.\n";
         std::cout << "       --dont-sync/-d disables time synchronization.\n";
         return 1;
@@ -140,6 +147,66 @@ int main(int argc, char **argv)
     auto blackboard = BT::Blackboard::create();
     tree::ConfigValueBase::root_tree_blackboard = blackboard;
     auto tree = factory.createTreeFromText(tree_string, blackboard);
+
+    // override cli params to blackboard
+    for (const auto& param : params) 
+    {
+        // a param is in the form key:=value
+        auto delim_pos = param.find(":=");
+        
+        if (delim_pos == std::string::npos)
+        {
+            throw std::runtime_error("Invalid param format: " + param + ". Expected key:=value");
+        }
+        
+        std::string key = param.substr(0, delim_pos);
+        std::string value_str = param.substr(delim_pos + 2);
+        
+        // type is autodetected
+        
+        // bool?
+        if(value_str == "true" || value_str == "false")
+        {
+            bool value = (value_str == "true");
+            blackboard->set<bool>(key, value);
+            p.cout() << "Set param (bool) " << key << " := " << (value ? "true" : "false") << "\n";
+            continue;
+        }
+
+        // int?
+        try
+        {
+            size_t idx = 0;
+            int value = std::stoi(value_str, &idx);
+            // ensure whole string was converted
+            if (idx < value_str.size()) {
+                throw "";
+            }
+            blackboard->set<int>(key, value);
+            p.cout() << "Set param (int) " << key << " := " << value << "\n";
+            continue;
+        }
+        catch(...) {}
+
+        // double?
+        try
+        {
+            size_t idx = 0;
+            int value = std::stod(value_str, &idx);
+            // ensure whole string was converted
+            if (idx < value_str.size()) {
+                throw "";
+            }
+            blackboard->set<double>(key, value);
+            p.cout() << "Set param (double) " << key << " := " << value << "\n";
+            continue;
+        }
+        catch(...) {}
+
+        // string
+        blackboard->set<std::string>(key, value_str);
+        p.cout() << "Set param (string) " << key << " := " << value_str << "\n";
+    }
 
     // run tree until ctrl+c
     std::chrono::duration<double> dt(1.0/rate);

@@ -28,6 +28,12 @@ BT::NodeStatus tree::CartesioLoader::tick()
         model->setJointPosition(q_start);
         model->update();
     }
+    else 
+    {
+        model->setJointPosition(model->getRobotState("home"));
+        model->update();
+        _p.cout() << "CartesioLoader: setting initial position to 'home' state \n";
+    }
 
     // configure cartesio
     std::string cartesio_log_path = "/tmp";

@@ -4,6 +4,8 @@ project(tree_hhcm VERSION 0.0.1)
 include(cmake/ExportProject.cmake)
 include(GNUInstallDirs)
 
+set(CMAKE_CXX_STANDARD 20)
+
 find_package(behaviortree_cpp REQUIRED)
 find_package(cartesian_interface REQUIRED)
 find_package(cartesian_interface_ros REQUIRED)
@@ -11,6 +13,7 @@ find_package(rclcpp REQUIRED)
 
 # the library
 add_library(tree_hhcm SHARED 
+  src/parsers.cpp
   src/cartesio_solve.cpp
   src/cartesio_loader.cpp
   src/cartesio_cartesian_task_control.cpp
@@ -23,6 +26,7 @@ add_library(tree_hhcm SHARED
   src/tree_hhcm.cpp
   src/common.cpp
   src/load_pose_from_config.cpp
+  src/load_param_from_config.cpp
   )
 
 target_link_libraries(tree_hhcm 

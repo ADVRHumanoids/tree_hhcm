@@ -8,6 +8,7 @@ tree::CartesioTaskControl::CartesioTaskControl(std::string name, const BT::NodeC
 
 BT::NodeStatus tree::CartesioTaskControl::onStart()
 {
+
     _ci = getInput<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio").value();
 
     if (_ci)
@@ -86,12 +87,10 @@ BT::NodeStatus tree::CartesioTaskControl::onStart()
                   << _Tref.matrix() << "\n";
         _velocity_ctrl = false;
 
-        ConfigValue<double> trj_time_cfg;
-        if (!getInput("trj_time", trj_time_cfg))
+        if (!getInput("trj_time", _trj_time))
         {
             throw std::invalid_argument("missing required input [trj_time]");
         }
-        _trj_time = trj_time_cfg.value();
 
         if (_trj_time <= 0)
         {
@@ -146,7 +145,7 @@ BT::PortsList tree::CartesioTaskControl::providedPorts()
         BT::InputPort<bool>("local"),
         BT::InputPort<bool>("active", true, "set task active/inactive"),
         BT::InputPort<Eigen::Affine3d>("pose"),
-        BT::InputPort<ConfigValue<double>>("trj_time"),
+        BT::InputPort<double>("trj_time"),
         BT::InputPort<Eigen::Vector6d>("velocity"),
         BT::InputPort<double>("goal_velocity_threshold"),
     };
