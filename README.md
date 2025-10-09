@@ -1,6 +1,6 @@
-# bt_hhcm
+# tree_hhcm
 
-This package provides a BehaviorTree.CPP-based executable for hierarchical hybrid control and mission execution.
+This package provides a BehaviorTree.CPP-based library of TreeNodes tailored to the HHCM toolchains, and an executable for hierarchical hybrid control and mission execution.
 
 ## Provided BTCPP TreeNodes
 - **LoadParamFromConfig**: Loads parameters from YAML config files into the blackboard.
