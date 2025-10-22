@@ -10,24 +10,37 @@
 #include <tree_hhcm/robot/robot_move.h>
 #include <tree_hhcm/robot/robot_sense.h>
 #include <tree_hhcm/robot/robot_gripper_ctrl.h>
+#include <tree_hhcm/robot/robot_joint_state_trajectory.h>
+#include <tree_hhcm/robot/robot_collision_check.h>
 
 #include <tree_hhcm/cartesio/cartesio_cartesian_task_control.h>
 #include <tree_hhcm/cartesio/cartesio_loader.h>
 #include <tree_hhcm/cartesio/cartesio_solve.h>
+#include <tree_hhcm/cartesio/cartesio_tf_publisher.h>
+
+#include <tree_hhcm/anime/anime_log_metrics.h>
 
 BT_REGISTER_NODES(factory)
 {
     factory.registerNodeType<tree::LoadPoseFromConfig>("LoadPoseFromConfig");
     factory.registerNodeType<tree::LoadParamFromConfig>("LoadParamFromConfig");
+
     factory.registerNodeType<tree::NodeProvider>("NodeProvider");
     factory.registerNodeType<tree::WaitSetBool>("WaitSetBool");
+
     factory.registerNodeType<tree::RobotLoader>("RobotLoader");
     factory.registerNodeType<tree::RobotSense>("RobotSense");
     factory.registerNodeType<tree::RobotMove>("RobotMove");
     factory.registerNodeType<tree::RobotGripperCtrl>("RobotGripperCtrl");
+    factory.registerNodeType<tree::RobotJointStateTrajectory>("RobotJointStateTrajectory");
+    factory.registerNodeType<tree::RobotCollisionCheck>("RobotCollisionCheck");
+    
     factory.registerNodeType<tree::CartesioLoader>("CartesioLoader");
     factory.registerNodeType<tree::CartesioSolve>("CartesioSolve");
     factory.registerNodeType<tree::CartesioTaskControl>("CartesioTaskControl");
+    factory.registerNodeType<tree::CartesioTfPublisher>("CartesioTfPublisher");
+
+    factory.registerNodeType<tree::AnimeLogMetrics>("AnimeLogMetrics");
 }
 
 BT::Blackboard::Ptr tree::ConfigValueBase::root_tree_blackboard = nullptr;

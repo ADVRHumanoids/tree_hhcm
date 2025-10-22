@@ -17,12 +17,14 @@ XBot::ConfigOptions tree::RobotLoader::parse_from_inputs()
     
     if(getInput("urdf", urdf_cmd))
     {
+        _p.cout() << "Executing URDF command: " << Globals::instance().parse_shell(urdf_cmd) << std::endl;
         std::string urdf = Globals::instance().check_output(urdf_cmd);
         cfg.set_urdf(urdf);
     }
     
     if(getInput("srdf", srdf_cmd))
     {
+        _p.cout() << "Executing SRDF command: " << srdf_cmd << std::endl;
         std::string srdf = Globals::instance().check_output(srdf_cmd);
         cfg.set_srdf(srdf);
     }

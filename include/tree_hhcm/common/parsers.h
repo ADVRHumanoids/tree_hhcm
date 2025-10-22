@@ -53,6 +53,18 @@ namespace BT
         return node.as<std::vector<double>>();
     }
 
+    template <> inline std::vector<int> convertFromString(StringView str)
+    {
+        // we expect a yaml sequence like "[val1, val2, val3]"
+        YAML::Node node = YAML::Load(std::string(str));
+        if (!node.IsSequence())
+        {
+            throw RuntimeError("invalid input");
+        }
+
+        return node.as<std::vector<int>>();
+    }
+
     template <> inline std::vector<std::string> convertFromString(StringView str)
     {
         // we expect a yaml sequence like "[val1, val2, val3]"

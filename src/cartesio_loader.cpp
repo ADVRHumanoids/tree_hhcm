@@ -36,13 +36,13 @@ BT::NodeStatus tree::CartesioLoader::tick()
     }
 
     // configure cartesio
-    std::string cartesio_log_path = "/tmp";
+    std::string cartesio_log_path;
     getInput("cartesio_log_path", cartesio_log_path);
 
     auto params = std::make_shared<XBot::Cartesian::Parameters>(Globals::instance().tree_dt,
                                                                 cartesio_log_path);
 
-    params->setLogEnabled(false);
+    params->setLogEnabled(!cartesio_log_path.empty());
 
     auto ctx = std::make_shared<XBot::Cartesian::Context>(params, model);
 
@@ -61,13 +61,26 @@ BT::NodeStatus tree::CartesioLoader::tick()
         _p.cout() << "CartesIO configuration succeeded \n";
     }
 
-    _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci);
+    bool create_ros_server = true;
+    getInput("create_ros_server", create_ros_server);
+
+    if(create_ros_server)
+    {
+        bool publish_tf = true;
+        getInput("publish_tf", publish_tf);
+
+        XBot::Cartesian::RosServerClass::Options opt;
+        opt.publish_tf = publish_tf;
+
+        _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci, opt);
+
+         setOutput<XBot::Cartesian::RosServerClass::Ptr>("ros_server", _ros_server);
+    }
+    
 
     setOutput<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio", _ci);
 
     setOutput<XBot::ModelInterface::Ptr>("model", model);
-
-    setOutput<XBot::Cartesian::RosServerClass::Ptr>("ros_server", _ros_server);
     
     return BT::NodeStatus::SUCCESS;
 }
@@ -79,6 +92,8 @@ BT::PortsList tree::CartesioLoader::providedPorts()
         BT::InputPort<std::string>("ik_problem_path"),
         BT::InputPort<std::string>("cartesio_log_path"),
         BT::InputPort<Eigen::VectorXd>("q_start"),
+        BT::InputPort<bool>("publish_tf"),
+        BT::InputPort<bool>("create_ros_server"),
         BT::OutputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesio"),
         BT::OutputPort<XBot::Cartesian::RosServerClass::Ptr>("ros_server"),
         BT::OutputPort<XBot::ModelInterface::Ptr>("model")

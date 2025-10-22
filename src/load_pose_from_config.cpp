@@ -4,6 +4,7 @@
 std::map<std::string, YAML::Node> tree::LoadPoseFromConfig::_config_cache;
 
 using namespace tree;
+using namespace std::string_literals;
 
 LoadPoseFromConfig::LoadPoseFromConfig(std::string name, const BT::NodeConfiguration &config) : 
     BT::SyncActionNode(name, config), _p(*this)
@@ -19,11 +20,13 @@ BT::NodeStatus LoadPoseFromConfig::tick()
         throw BT::RuntimeError("LoadPoseFromConfig: missing required input [config]");
     }
 
+    _p.cout() << "LoadPoseFromConfig: loading config from " << cfg_path << "\n";
+
     // check if config is already loaded
     YAML::Node cfg;
     try 
     {
-        cfg = _config_cache.at(cfg_path);
+        cfg = YAML::Clone(_config_cache.at(cfg_path));
     }
     catch(const std::out_of_range& e)
     {
@@ -36,7 +39,7 @@ BT::NodeStatus LoadPoseFromConfig::tick()
         cfg = YAML::LoadFile(cfg_path);
         
         // cache it
-        _config_cache[cfg_path] = cfg;
+        _config_cache[cfg_path] = YAML::Clone(cfg);
     }
 
 
@@ -94,7 +97,7 @@ BT::NodeStatus LoadPoseFromConfig::tick()
     }
     else
     {
-        throw BT::RuntimeError("LoadPoseFromConfig: invalid frame expression");
+        throw BT::RuntimeError("LoadPoseFromConfig: invalid frame expression '" + frame_expr + "'");
     }
 
 

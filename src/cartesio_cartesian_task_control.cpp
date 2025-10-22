@@ -109,9 +109,18 @@ BT::NodeStatus tree::CartesioTaskControl::onStart()
 
 BT::NodeStatus tree::CartesioTaskControl::onRunning()
 {
+
+    _time += Globals::instance().tree_dt;
+    
     if (_task && _velocity_ctrl)
     {
         _task->setVelocityReference(_vref);
+    }
+
+    if(_time > _trj_time + 2.0)
+    {
+        _p.cerr() << "timeout reached \n";
+        return BT::NodeStatus::FAILURE;
     }
 
     if (_task && !_velocity_ctrl && _task->getTaskState() == XBot::Cartesian::State::Online)

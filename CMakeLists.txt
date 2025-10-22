@@ -17,16 +17,20 @@ add_library(tree_hhcm SHARED
   src/cartesio_solve.cpp
   src/cartesio_loader.cpp
   src/cartesio_cartesian_task_control.cpp
+  src/cartesio_tf_publisher.cpp
   src/robot_loader.cpp
   src/robot_sense.cpp
   src/robot_move.cpp
+  src/robot_joint_state_trajectory.cpp
   src/robot_gripper_ctrl.cpp
+  src/robot_collision_check.cpp
   src/node_provider.cpp
   src/wait_setbool.cpp
   src/tree_hhcm.cpp
   src/common.cpp
   src/load_pose_from_config.cpp
   src/load_param_from_config.cpp
+  src/anime_log_metrics.cpp
   )
 
 target_link_libraries(tree_hhcm 

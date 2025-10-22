@@ -33,6 +33,23 @@ BT::NodeStatus tree::WaitSetBool::onStart()
 
     _value.reset();
     _p.cout() << "waiting for service call on [" << _srv->get_service_name() << "]\n";
+
+    bool blocking = false;
+    getInput("blocking", blocking);
+
+    if(blocking)
+    {
+        auto node_status = BT::NodeStatus::RUNNING;
+        
+        while(node_status == BT::NodeStatus::RUNNING)
+        {
+            std::this_thread::sleep_for(std::chrono::duration<double>(Globals::instance().tree_dt));
+            node_status = onRunning();
+        }
+
+        return node_status;
+    }
+
     return BT::NodeStatus::RUNNING;
 }
 

@@ -25,7 +25,7 @@ BT::NodeStatus tree::LoadParamFromConfig::tick()
     YAML::Node cfg;
     try 
     {
-        cfg = _config_cache.at(cfg_path);
+        cfg = YAML::Clone(_config_cache.at(cfg_path));
     }
     catch(const std::out_of_range& e)
     {
@@ -38,7 +38,7 @@ BT::NodeStatus tree::LoadParamFromConfig::tick()
         cfg = YAML::LoadFile(cfg_path);
         
         // cache it
-        _config_cache[cfg_path] = cfg;
+        _config_cache[cfg_path] = YAML::Clone(cfg);
     }
 
     // get input key
