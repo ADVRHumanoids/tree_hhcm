@@ -1,5 +1,6 @@
 #include <tree_hhcm/anime/anime_log_metrics.h>
 #include <fstream>
+#include <tree_hhcm/cartesio/cartesio_cartesian_task_control.h>
 
 using namespace tree;
 
@@ -46,6 +47,16 @@ BT::NodeStatus tree::AnimeLogMetrics::onStart()
     std::ofstream srdf_file(log_file_path + "_robot.srdf");
     srdf_file << srdf;
     srdf_file.close();
+
+    // provide goal callback 
+    auto goal_cb = [this](Eigen::Vector6d e)
+    {
+        _logger->add("cartesian_goal_error", e);
+        _logger->add("cartesian_goal_error_time", _time);
+        _p.cout() << "cartesian goal reached, error = [" << e.transpose().format(2) << "] \n";
+    };
+    
+    setOutput<CartesioTaskControl::GoalCallback>("goal_callback", goal_cb);
 
     // reset time
     _time = 0.0;
@@ -108,6 +119,7 @@ BT::PortsList tree::AnimeLogMetrics::providedPorts()
         BT::InputPort<std::string>("log_file_path", "Path to the MAT log file"),
         BT::InputPort<XBot::ModelInterface::Ptr>("model", "XBot2 ModelInterface pointer"),
         BT::InputPort<XBot::Cartesian::CartesianInterfaceImpl::Ptr>("cartesian_interface", "XBot2 CartesianInterfaceImpl pointer"),
-        BT::InputPort<std::vector<int>>("colliding_links", std::vector<int>{}, "List of link indices involved in collisions to log")
+        BT::InputPort<std::vector<int>>("colliding_links", std::vector<int>{}, "List of link indices involved in collisions to log"),
+        BT::OutputPort<tree::CartesioTaskControl::GoalCallback>("goal_callback", "Callback to be called when the goal is reached")
     };
 }

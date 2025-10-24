@@ -102,6 +102,12 @@ BT::NodeStatus tree::CartesioTaskControl::onStart()
         _task->setPoseTarget(_Tref, _trj_time);
     }
 
+    // goal callback
+    if(getInput("goal_callback", _goal_cb))
+    {
+        _p.cout() << "got goal callback \n";
+    }
+
     _time = 0;
 
     return BT::NodeStatus::RUNNING;
@@ -131,6 +137,10 @@ BT::NodeStatus tree::CartesioTaskControl::onRunning()
             _task->getCurrentPose(T);
             Eigen::Vector6d e = XBot::Utils::computePoseError(T, _Tref);
             _p.cout() << "task reached target, error = [" << e.transpose().format(2) << "] \n";
+            if(_goal_cb)
+            {
+                _goal_cb(e);
+            }
             return BT::NodeStatus::SUCCESS;
         }
         return BT::NodeStatus::RUNNING;
@@ -159,6 +169,7 @@ BT::PortsList tree::CartesioTaskControl::providedPorts()
         BT::InputPort<Eigen::Affine3d>("pose"),
         BT::InputPort<double>("trj_time"),
         BT::InputPort<Eigen::Vector6d>("velocity"),
-        BT::InputPort<double>("goal_velocity_threshold")
+        BT::InputPort<double>("goal_velocity_threshold"),
+        BT::InputPort<GoalCallback>("goal_callback"),
     };
 }

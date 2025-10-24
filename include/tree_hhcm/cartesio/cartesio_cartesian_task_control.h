@@ -18,6 +18,8 @@ class CartesioTaskControl : public BT::StatefulActionNode {
 
 public:
 
+    typedef std::function<void(Eigen::Vector6d)> GoalCallback;
+
     CartesioTaskControl(std::string name, const BT::NodeConfiguration& config);
 
     BT::NodeStatus onStart() override;
@@ -36,6 +38,7 @@ private:
     Printer _p;
     double _time = 0, _trj_time = 0;
     double _goal_velocity_threshold = 0.01; // [rad/s]
+    GoalCallback _goal_cb;
 
 };
 }
