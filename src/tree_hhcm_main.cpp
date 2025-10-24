@@ -84,7 +84,7 @@ int main(int argc, char **argv)
             dont_sync = true;
             break;
         case 'a':
-            xacro_args += " " + std::string(optarg);
+            xacro_args += " \"" + std::string(optarg) + "\"";
             break;
         case 'm':
             params.push_back(std::string(optarg));

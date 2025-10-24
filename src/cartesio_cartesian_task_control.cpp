@@ -127,7 +127,10 @@ BT::NodeStatus tree::CartesioTaskControl::onRunning()
     {
         if ((_ci->getModel()->getJointVelocity().array() < _goal_velocity_threshold).all())
         {
-            _p.cout() << "task reached target with zero velocity \n";
+            Eigen::Affine3d T;
+            _task->getCurrentPose(T);
+            Eigen::Vector6d e = XBot::Utils::computePoseError(T, _Tref);
+            _p.cout() << "task reached target, error = [" << e.transpose().format(2) << "] \n";
             return BT::NodeStatus::SUCCESS;
         }
         return BT::NodeStatus::RUNNING;
@@ -156,6 +159,6 @@ BT::PortsList tree::CartesioTaskControl::providedPorts()
         BT::InputPort<Eigen::Affine3d>("pose"),
         BT::InputPort<double>("trj_time"),
         BT::InputPort<Eigen::Vector6d>("velocity"),
-        BT::InputPort<double>("goal_velocity_threshold"),
+        BT::InputPort<double>("goal_velocity_threshold")
     };
 }
