@@ -33,6 +33,8 @@ private:
     XBot::ModelInterface::Ptr _model;
     XBot::Cartesian::CartesianInterfaceImpl::Ptr _ci;
     XBot::MatLogger2::Ptr _logger;
+    double _time;
+
 
     Printer _p;
 

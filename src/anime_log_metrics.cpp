@@ -47,16 +47,37 @@ BT::NodeStatus tree::AnimeLogMetrics::onStart()
     srdf_file << srdf;
     srdf_file.close();
 
+    // reset time
+    _time = 0.0;
+
     return BT::NodeStatus::RUNNING;
 }
 
 
 BT::NodeStatus tree::AnimeLogMetrics::onRunning()
 {
+    // log time 
+    _logger->add("time", _time);
+    _time += Globals::instance().tree_dt;
+
     // log model
-    _logger->add("q", _model->getJointPosition());
-    _logger->add("v", _model->getJointVelocity());
-    _logger->add("tau", _model->getJointEffort());
+    auto [qmin, qmax] = _model->getJointLimits();
+    auto vmax = _model->getVelocityLimits();
+    auto taumax = _model->getEffortLimits();
+    auto q =  _model->getJointPosition();
+    auto v = _model->getJointVelocity();
+    auto tau = _model->getJointEffort();
+    Eigen::VectorXd q_normalized = (q - qmin).cwiseQuotient(qmax - qmin);
+    Eigen::VectorXd v_normalized = v.cwiseQuotient(vmax);
+    Eigen::VectorXd tau_normalized = tau.cwiseQuotient(taumax);
+
+    auto J = _model->getJacobian("gripper_A");
+    double manipulability = std::sqrt((J * J.transpose()).determinant());
+
+    _logger->add("q", q_normalized);
+    _logger->add("v", v_normalized);
+    _logger->add("tau", tau_normalized);
+    _logger->add("manipulability", manipulability);
 
     // log cartesian interface metrics
     auto task_names = _ci->getTaskList();
