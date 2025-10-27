@@ -123,9 +123,17 @@ BT::NodeStatus tree::CartesioTaskControl::onRunning()
         _task->setVelocityReference(_vref);
     }
 
+    Eigen::Affine3d T;
+    _task->getCurrentPose(T);
+    Eigen::Vector6d e = XBot::Utils::computePoseError(T, _Tref);
+
     if(_time > _trj_time + 2.0)
     {
-        _p.cerr() << "timeout reached \n";
+        _p.cerr() << "timeout reached, error = [" << e.transpose().format(2) << "] \n";
+        if(_goal_cb)
+        {
+            _goal_cb(e);
+        }
         return BT::NodeStatus::FAILURE;
     }
 
@@ -133,9 +141,6 @@ BT::NodeStatus tree::CartesioTaskControl::onRunning()
     {
         if ((_ci->getModel()->getJointVelocity().array() < _goal_velocity_threshold).all())
         {
-            Eigen::Affine3d T;
-            _task->getCurrentPose(T);
-            Eigen::Vector6d e = XBot::Utils::computePoseError(T, _Tref);
             _p.cout() << "task reached target, error = [" << e.transpose().format(2) << "] \n";
             if(_goal_cb)
             {
